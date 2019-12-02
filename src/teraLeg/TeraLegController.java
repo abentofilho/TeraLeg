@@ -80,7 +80,7 @@ public class TeraLegController implements RobotController {
 	double Lmax = 1.2; // maximum leg length without singularity
 	double Lmin = 0.8; // Lmax - h_Des
 	double h_Des = 0.4; // desired height for jump control
-	double K_LgStf = 10; // leg spring constant: K_LgStf*m^0.67
+	double K_LgStf = 10; //8;//5;// leg spring constant: K_LgStf*m^0.67
 	double B_SwLeg = 50; // damping constant for COM position control relative to foot
 	private TeraLegRobot rob;
 
@@ -223,21 +223,6 @@ public class TeraLegController implements RobotController {
 				- Fz * (-L5 * Math.sin(q_J2.getDoubleValue() + q_J3.getDoubleValue() + q_J4.getDoubleValue())) + My;
 		return tau;
 	}
-
-	//
-	// estados
-	//
-//	private double FLIGHT() {
-//		return 1.0;
-//	}
-//
-//	private double GROUND_CONTACT() {
-//		return 2.0;dec
-//	}
-//
-//	private double COMPRESSED() {
-//		return 3.0;
-//	}
 
 	private void SLIPmodel(double h_des, double Lmin, double v_x) {
 

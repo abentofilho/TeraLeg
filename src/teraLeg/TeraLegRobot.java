@@ -25,7 +25,7 @@ public class TeraLegRobot extends Robot {
 	private static final double BODY_RADIUS = 0.050;
 	private static final double BODY_Izz = BODY_MASS * Math.pow(BODY_RADIUS, 2) / 2.0;
 	private static final double BODY_Iyy = BODY_MASS
-			* (Math.pow(BODY_RADIUS, 2) / 2.0 * Math.pow(BODY_LENGTH, 2) / 12.0);
+			* (Math.pow(BODY_RADIUS, 2) / 2.0 + Math.pow(BODY_LENGTH, 2) / 12.0);
 	private static final double BODY_Ixx = BODY_Iyy;
 
 	private static final double HIP_MASS = 1.5;
@@ -41,7 +41,7 @@ public class TeraLegRobot extends Robot {
 	private static final double THIGH_RADIUS = 0.030;
 	private static final double THIGH_Izz = THIGH_MASS * Math.pow(THIGH_RADIUS, 2) / 2.0;
 	private static final double THIGH_Iyy = THIGH_MASS
-			* (Math.pow(THIGH_RADIUS, 2) / 2.0 * Math.pow(THIGH_LENGTH, 2) / 12.0);
+			* (Math.pow(THIGH_RADIUS, 2) / 2.0 + Math.pow(THIGH_LENGTH, 2) / 12.0);
 	private static final double THIGH_Ixx = THIGH_Iyy;
 	private static final double THIGH_COM_X = 0.00, THIGH_COM_Y = 0.00, THIGH_COM_Z = -THIGH_LENGTH / 2;
 
@@ -140,11 +140,11 @@ public class TeraLegRobot extends Robot {
 		groundContactPoints.add(gc_foot);
 		J4.addGroundContactPoint(gc_foot);
 		/*
-		 * modelo f�sico dos pontos de contato
+		 * Contact points physical model 
 		 */
 		LinearGroundContactModel ground = new LinearGroundContactModel(this, this.getRobotsYoVariableRegistry());
 		/*
-		 * propriedades dos contatos
+		 * Contact properties
 		 */
 		ground.setZStiffness(2000.0);
 		ground.setZDamping(1500.0);

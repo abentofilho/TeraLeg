@@ -9,7 +9,7 @@ public class TeraLegSimulation {
 		TeraLegRobot robot = new TeraLegRobot("rob");
 		sim = new SimulationConstructionSet(robot);
 	    robot.setController(new TeraLegController(robot));
-		sim.setSimulateDuration(0.4);
+		sim.setSimulateDuration(2.4);
 		Thread teraThread = new Thread(sim);
 		teraThread.start();
 	}
