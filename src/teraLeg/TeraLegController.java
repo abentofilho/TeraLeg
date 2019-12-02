@@ -224,21 +224,6 @@ public class TeraLegController implements RobotController {
 		return tau;
 	}
 
-	//
-	// estados
-	//
-//	private double FLIGHT() {
-//		return 1.0;
-//	}
-//
-//	private double GROUND_CONTACT() {
-//		return 2.0;dec
-//	}
-//
-//	private double COMPRESSED() {
-//		return 3.0;
-//	}
-
 	private void SLIPmodel(double h_des, double Lmin, double v_x) {
 
 		if (state == State.GROUND_CONTACT) {
