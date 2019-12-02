@@ -48,7 +48,7 @@ import us.ihmc.simulationconstructionset.util.ground.FlatGroundProfile;
  */
 public class TeraLegController implements RobotController {
 
-	private TeraLegRobot robot;
+//	private TeraLegRobot robot;
 	private YoVariableRegistry registry;
 	private DoubleYoVariable q_x, qd_x, q_z;
 	private DoubleYoVariable q_pitch, qd_pitch;
@@ -64,6 +64,7 @@ public class TeraLegController implements RobotController {
 	private DoubleYoVariable gc_front, gc_rear;
 	private DoubleYoVariable gc_front_fs, gc_rear_fs;
 	private DoubleYoVariable gc_front_fz, gc_rear_fz;
+	private DoubleYoVariable gc_front_z, gc_rear_z;
 
 	private enum State {
 		FLIGHT, GROUND_CONTACT, COMPRESSED
@@ -73,56 +74,63 @@ public class TeraLegController implements RobotController {
 
 //
 	double g = 9.81; // gravity
-	double tImp = 0.25; // [s] tiempo para imponer la fuerza de impulso en salto
+	double tImp = 0.25; // [s] time to impose the impulse force in jump
 	double Kleg;
 	double v_x = 0.0;
-	double Lmax = 1.2; // m�xima longitud de la pierna sin singularidad
+	double Lmax = 1.2; // maximum leg length without singularity
 	double Lmin = 0.8; // Lmax - h_Des
-	double h_Des = 0.4; // altura deseada para control de salto
-	double K_LgStf = 10; // cons de moelle de la pierna K_LgStf*m^0.67
-
-	double B_SwLeg = 50; // cons de amort cont posicion del COM respecto al pie
+	double h_Des = 0.4; // desired height for jump control
+	double K_LgStf = 10; // leg spring constant: K_LgStf*m^0.67
+	double B_SwLeg = 50; // damping constant for COM position control relative to foot
 	private TeraLegRobot rob;
 
 	public TeraLegController(TeraLegRobot robot) {
 		this.rob = robot;
+		/*
+		 * robot variables
+		 */
 		registry = new YoVariableRegistry("registry");
 		q_x = (DoubleYoVariable) rob.getVariable("q_x");
 		qd_x = (DoubleYoVariable) rob.getVariable("qd_x");
 		q_z = (DoubleYoVariable) rob.getVariable("q_z");
-		q_pitch = (DoubleYoVariable)rob.getVariable("q_pitch");
-		qd_pitch = (DoubleYoVariable)rob.getVariable("qd_pitch");
-		q_J1 = (DoubleYoVariable)rob.getVariable("q_J1");
-		qd_J1 = (DoubleYoVariable)rob.getVariable("qd_J1");
-		q_J2 = (DoubleYoVariable)rob.getVariable("q_J2");
-		qd_J2 = (DoubleYoVariable)rob.getVariable("qd_J2");
-		q_J3 = (DoubleYoVariable)rob.getVariable("q_J3");
-		qd_J3 = (DoubleYoVariable)rob.getVariable("qd_J3");
-		q_J4 = (DoubleYoVariable)rob.getVariable("q_J4");
-		qd_J4 = (DoubleYoVariable)rob.getVariable("qd_J4");
-		tau_J1 = (DoubleYoVariable)rob.getVariable("tau_J1");
-		tau_J2 = (DoubleYoVariable)rob.getVariable("tau_J2");
-		tau_J3 = (DoubleYoVariable)rob.getVariable("tau_J3");
-		tau_J4 = (DoubleYoVariable)rob.getVariable("tau_J4");
-		spring0_x = (DoubleYoVariable)rob.getVariable("spring0_x");
-		spring0_dx = (DoubleYoVariable)rob.getVariable("spring0_dx");
-		spring0_z = (DoubleYoVariable)rob.getVariable("spring0_z");
-		spring0_dz = (DoubleYoVariable)rob.getVariable("spring0_dz");
-		spring4_x = (DoubleYoVariable)rob.getVariable("spring4_x");
-		spring4_dx = (DoubleYoVariable)rob.getVariable("spring4_dx");
-		spring4_z = (DoubleYoVariable)rob.getVariable("spring4_z");
-		spring4_dz = (DoubleYoVariable)rob.getVariable("spring4_dz");
-		spring4_fz = (DoubleYoVariable)rob.getVariable("spring4_fz");
-		spring0_fz = (DoubleYoVariable)rob.getVariable("spring0_fz");
-		spring4_fz = (DoubleYoVariable)rob.getVariable("spring4_fz");
-		springForce = (DoubleYoVariable)rob.getVariable("springForce");
-		z_flight_ant = (DoubleYoVariable)rob.getVariable("z_flight_ant");
-		gc_front = (DoubleYoVariable)rob.getVariable("gc_front");
-		gc_rear = (DoubleYoVariable)rob.getVariable("gc_rear");
-		gc_front_fs = (DoubleYoVariable)rob.getVariable("gc_front_fs");
-		gc_rear_fs = (DoubleYoVariable)rob.getVariable("gc_rear_fs");
-		gc_front_fz = (DoubleYoVariable)rob.getVariable("gc_front_fz");
-		gc_rear_fz = (DoubleYoVariable)rob.getVariable("gc_rear_fz");
+		q_pitch = (DoubleYoVariable) rob.getVariable("q_pitch");
+		qd_pitch = (DoubleYoVariable) rob.getVariable("qd_pitch");
+		q_J1 = (DoubleYoVariable) rob.getVariable("q_J1");
+		qd_J1 = (DoubleYoVariable) rob.getVariable("qd_J1");
+		q_J2 = (DoubleYoVariable) rob.getVariable("q_J2");
+		qd_J2 = (DoubleYoVariable) rob.getVariable("qd_J2");
+		q_J3 = (DoubleYoVariable) rob.getVariable("q_J3");
+		qd_J3 = (DoubleYoVariable) rob.getVariable("qd_J3");
+		q_J4 = (DoubleYoVariable) rob.getVariable("q_J4");
+		qd_J4 = (DoubleYoVariable) rob.getVariable("qd_J4");
+		tau_J1 = (DoubleYoVariable) rob.getVariable("tau_J1");
+		tau_J2 = (DoubleYoVariable) rob.getVariable("tau_J2");
+		tau_J3 = (DoubleYoVariable) rob.getVariable("tau_J3");
+		tau_J4 = (DoubleYoVariable) rob.getVariable("tau_J4");
+		spring0_x = (DoubleYoVariable) rob.getVariable("spring0_x");
+		spring0_dx = (DoubleYoVariable) rob.getVariable("spring0_dx");
+		spring0_z = (DoubleYoVariable) rob.getVariable("spring0_z");
+		spring0_dz = (DoubleYoVariable) rob.getVariable("spring0_dz");
+		spring4_x = (DoubleYoVariable) rob.getVariable("spring4_x");
+		spring4_dx = (DoubleYoVariable) rob.getVariable("spring4_dx");
+		spring4_z = (DoubleYoVariable) rob.getVariable("spring4_z");
+		spring4_dz = (DoubleYoVariable) rob.getVariable("spring4_dz");
+		spring4_fz = (DoubleYoVariable) rob.getVariable("spring4_fz");
+		spring0_fz = (DoubleYoVariable) rob.getVariable("spring0_fz");
+		spring4_fz = (DoubleYoVariable) rob.getVariable("spring4_fz");
+		gc_front = (DoubleYoVariable) rob.getVariable("gc_front");
+		gc_front_fs = (DoubleYoVariable) rob.getVariable("gc_front_fs");
+		gc_front_fz = (DoubleYoVariable) rob.getVariable("gc_front_fz");
+		gc_front_z = (DoubleYoVariable) rob.getVariable("gc_front_z");
+		gc_rear = (DoubleYoVariable) rob.getVariable("gc_rear");
+		gc_rear_fs = (DoubleYoVariable) rob.getVariable("gc_rear_fs");
+		gc_rear_fz = (DoubleYoVariable) rob.getVariable("gc_rear_fz");
+		gc_rear_z = (DoubleYoVariable) rob.getVariable("gc_rear_z");
+		/*
+		 * controller variables
+		 */
+		springForce = new DoubleYoVariable("springForce", registry);
+		z_flight_ant = new DoubleYoVariable("z_flight_ant", registry);
 		initControl();
 	}
 
@@ -132,7 +140,8 @@ public class TeraLegController implements RobotController {
 		q_J2.set(-0.49);
 		q_J3.set(1.42);
 		q_J4.set(-1.6);
-		q_z.set(1.2);
+		q_z.set(0.867);
+		gc_front_z.set(0.0);
 		Kleg = LegStiffness();
 
 	}
@@ -144,9 +153,9 @@ public class TeraLegController implements RobotController {
 
 	}
 
-	//
-	// De momento mantenemos el movto de la pata en 2D.
-	//
+	/*
+	 * block J1 for plane simulation
+	 */
 	private void BlockJ1() {
 		double K = 100.0, B = 10.0;
 		tau_J1.set(-K * (q_J1.getDoubleValue()) - B * qd_J1.getDoubleValue());
@@ -165,10 +174,10 @@ public class TeraLegController implements RobotController {
 		return K_LgStf * Math.pow(rob.masaTotal(), 0.67);
 	}
 
-	//
-	// Jacobiano traspuesta, obtencion de pares articulares en funcion
-	// de la fuerza cartesiana en el extremo */
-	//
+	/*
+	 * Transposed Jacobian, obtaining joint pairs as a function of the Cartesian
+	 * force at the end
+	 */
 	private void SetJointTorques(double Fx, double Fy, double Fz, double Mx, double My, double Mz) {
 
 		tau_J2.set(DesiredTorqueJ2(Fx, Fy, Fz, Mx, My, Mz));
@@ -223,7 +232,7 @@ public class TeraLegController implements RobotController {
 //	}
 //
 //	private double GROUND_CONTACT() {
-//		return 2.0;
+//		return 2.0;dec
 //	}
 //
 //	private double COMPRESSED() {
@@ -253,7 +262,6 @@ public class TeraLegController implements RobotController {
 				System.out.println("GROUND_CONTACT");
 			}
 		}
-
 	}
 
 	private void swingLeg() {
@@ -294,7 +302,7 @@ public class TeraLegController implements RobotController {
 		// C�lculo de velocidad inicial vertical para el salto:
 		if (K * Math.pow(x_i, 2.0) / M >= 2 * 9.8 * delta_h) {
 			v_i = 0.0;
-			System.out.println("La energ�a del muelle es suficiente para alcanzar h");
+			System.out.println("A energia da mola é suficiente para alcançar h");
 		} else
 			v_i = Math.sqrt(2 * 9.8 * delta_h - K * Math.pow(x_i, 2.0) / M);
 		// Nos evitamos invertir el jacobiano si lo pasamos a fuerza:

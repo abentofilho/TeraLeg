@@ -1,14 +1,3 @@
-//package teraLeg;
-//
-//public class TeraLegSimulation {
-//
-//	public static void main(String[] args) {
-//		// TODO Auto-generated method stub
-//
-//	}
-//
-//}
-
 package teraLeg;
 
 import us.ihmc.simulationconstructionset.SimulationConstructionSet;
@@ -19,6 +8,8 @@ public class TeraLegSimulation {
 	public TeraLegSimulation() {
 		TeraLegRobot robot = new TeraLegRobot("rob");
 		sim = new SimulationConstructionSet(robot);
+	    robot.setController(new TeraLegController(robot));
+		sim.setSimulateDuration(0.4);
 		Thread teraThread = new Thread(sim);
 		teraThread.start();
 	}
