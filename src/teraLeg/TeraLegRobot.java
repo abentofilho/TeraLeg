@@ -118,6 +118,18 @@ public class TeraLegRobot extends Robot {
 		J4.setLink(link4);
 		J3.addJoint(J4);
 		/*
+		 * Set limit stops for J2, j3 e j4
+		 */
+		/*
+		 * void setLimitStops(double q_min, double q_max, double k_limit, double
+		 * b_limit) Adds limit stops to the pin joint. These limit stops are implemented
+		 * as a spring-damper system with spring constant k_limit and damper constant
+		 * b_limit.
+		 */		
+		((PinJoint)J2).setLimitStops(-2.0,-0.5,50.0,50.0); 
+		((PinJoint)J3).setLimitStops(0.8,1.5,50,50); 
+		((PinJoint)J4).setLimitStops(ANKLE_ANGLE-0.2, ANKLE_ANGLE-0.0, 6,20);
+		/*
 		 * Ground contact points: gc_front = toe off
 		 */
 		GroundContactPoint gc_foot = new GroundContactPoint("gc_front", new Vector3d(0.0, 0.0, -FOOT_LENGTH), this);
@@ -146,12 +158,12 @@ public class TeraLegRobot extends Robot {
 		/*
 		 * Contact properties
 		 */
-		ground.setZStiffness(2000.0);
-		ground.setZDamping(1500.0);
+		ground.setZStiffness(500.0);//2000.0);
+		ground.setZDamping(500.0);//1500.0);
 		ground.setXYStiffness(50000.0);
-		ground.setXYDamping(2000.0);
+		ground.setXYDamping(200.0);
 		/*
-		 * modelo de perfil de solo
+		 * modelo de perfil de solo 
 		 */
 		ground.setGroundProfile3D(new FlatGroundProfile());
 		this.setGroundContactModel(ground);

@@ -65,6 +65,7 @@ public class TeraLegController implements RobotController {
 	private DoubleYoVariable gc_front_fs, gc_rear_fs;
 	private DoubleYoVariable gc_front_fz, gc_rear_fz;
 	private DoubleYoVariable gc_front_z, gc_rear_z;
+	private IntegerYoVariable yoState;
 
 	private enum State {
 		FLIGHT, GROUND_CONTACT, COMPRESSED
@@ -80,7 +81,7 @@ public class TeraLegController implements RobotController {
 	double Lmax = 1.2; // maximum leg length without singularity
 	double Lmin = 0.8; // Lmax - h_Des
 	double h_Des = 0.4; // desired height for jump control
-	double K_LgStf = 10; //8;//5;// leg spring constant: K_LgStf*m^0.67
+	double K_LgStf = 10; // 8;//5;// leg spring constant: K_LgStf*m^0.67
 	double B_SwLeg = 50; // damping constant for COM position control relative to foot
 	private TeraLegRobot rob;
 
@@ -131,6 +132,7 @@ public class TeraLegController implements RobotController {
 		 */
 		springForce = new DoubleYoVariable("springForce", registry);
 		z_flight_ant = new DoubleYoVariable("z_flight_ant", registry);
+		yoState = new IntegerYoVariable("yoState", registry);
 		initControl();
 	}
 
@@ -225,26 +227,36 @@ public class TeraLegController implements RobotController {
 	}
 
 	private void SLIPmodel(double h_des, double Lmin, double v_x) {
-
+		double time = 0.;
 		if (state == State.GROUND_CONTACT) {
+			yoState.set(state.ordinal());
+//			time=rob.getTime();
 			controlBodyAttitude();
 			if (q_z.getDoubleValue() <= Lmin) {
 				state = State.COMPRESSED;
-				System.out.println("COMPRESSED");
+//				System.out.print("COMPRESSED ");
+//				System.out.println(time);
 			}
 		} else if (state == State.COMPRESSED) {
+			yoState.set(state.ordinal());
+//			time=rob.getTime();
 			controlHoppingHeight(h_Des);
 			if (gc_front_fs.getDoubleValue() == 0 && gc_rear_fs.getDoubleValue() == 0) {
 				z_flight_ant.set(0.0);
 				state = State.FLIGHT;
-				System.out.println("FLIGHT");
+//				System.out.print("FLIGHT ");
+//				System.out.println(time);
 			}
 		} else if (state == State.FLIGHT) {
+			yoState.set(state.ordinal());
+//			time=rob.getTime();
 			swingLeg();
 			GetMaxFlightHeight();
 			if (gc_front_fz.getDoubleValue() >= 5 || gc_rear_fz.getDoubleValue() >= 5) {
 				state = State.GROUND_CONTACT;
-				System.out.println("GROUND_CONTACT");
+//				System.out.print("GROUND_CONTACT ");
+//				System.out.println(time);
+//				time=0;
 			}
 		}
 	}
@@ -252,7 +264,7 @@ public class TeraLegController implements RobotController {
 	private void swingLeg() {
 		tau_J2.set(-B_SwLeg * qd_J2.getDoubleValue());
 		tau_J3.set(-B_SwLeg * qd_J3.getDoubleValue());
-		tau_J4.set(-B_SwLeg * qd_J4.getDoubleValue());
+		tau_J4.set(-B_SwLeg/4 * qd_J4.getDoubleValue());
 	}
 
 	private void controlBodyAttitude() {
@@ -263,7 +275,7 @@ public class TeraLegController implements RobotController {
 		Fx = Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue()) + Bx * (-spring4_dx.getDoubleValue());
 		//
 		// Esto corrige el pitch
-		My = Ky * q_pitch.getDoubleValue() + By * qd_pitch.getDoubleValue();
+		My = 2*Ky * q_pitch.getDoubleValue() + By * qd_pitch.getDoubleValue();
 		//
 		// aplica la transpuesta del jacobiano
 		SetJointTorques(Fx, Fy, Fz, Mx, My, Mz);
@@ -293,10 +305,10 @@ public class TeraLegController implements RobotController {
 		// Nos evitamos invertir el jacobiano si lo pasamos a fuerza:
 		// El impulso M V = F DT
 		// Controlamos tambi�n la posici�n del pie y la orientaci�n del cuerpo
-		Fx = Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue())
+		Fx = 6*Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue())
 				+ Bx * (qd_x.getDoubleValue() - spring4_dx.getDoubleValue());
 		// My = 50 * q_pitch.val + 20 * qd_pitch.val;
-		My = 1000 * q_pitch.getDoubleValue() + 400 * qd_pitch.getDoubleValue();
+		My = 1000/5 * q_pitch.getDoubleValue() + 400/5 * qd_pitch.getDoubleValue();
 		// dt=0.02 es el periodo de muestreo; repartimos el impulso en 10 dT, es decir,
 		// 0.2s
 		Fz = -0.1 * M * v_i / 0.02;
