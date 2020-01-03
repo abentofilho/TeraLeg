@@ -28,11 +28,11 @@ import us.ihmc.simulationconstructionset.util.ground.FlatGroundProfile;
 
 /**
  * <p>
- * Title: Muar
+ * Title: TeraLeg
  * </p>
  *
  * <p>
- * Description: Pata exoesqueleto
+ * Description: exoskeleton's and agile robot's leg 
  * </p>
  *
  * <p>
@@ -43,8 +43,9 @@ import us.ihmc.simulationconstructionset.util.ground.FlatGroundProfile;
  * Company: CAR
  * </p>
  *
- * @author Ant�nio Bento Filho
- * @version 1.0
+ * @author Antônio Bento Filho
+ * @version 2.0
+ * @param <YoVariableRegistry>
  */
 public class TeraLegController implements RobotController {
 
@@ -81,7 +82,7 @@ public class TeraLegController implements RobotController {
 	double Lmin = 0.8; // Lmax - h_Des
 	double h_Des = 0.4; // desired height for jump control
 	double K_LgStf = 10; //8;//5;// leg spring constant: K_LgStf*m^0.67
-	double B_SwLeg = 50; // damping constant for COM position control relative to foot
+	double B_SwLeg = 10;//50; // damping constant for COM position control relative to foot
 	private TeraLegRobot rob;
 
 	public TeraLegController(TeraLegRobot robot) {
@@ -250,9 +251,9 @@ public class TeraLegController implements RobotController {
 	}
 
 	private void swingLeg() {
-		tau_J2.set(-B_SwLeg * qd_J2.getDoubleValue());
-		tau_J3.set(-B_SwLeg * qd_J3.getDoubleValue());
-		tau_J4.set(-B_SwLeg * qd_J4.getDoubleValue());
+		tau_J2.set(-B_SwLeg * qd_pitch.getDoubleValue());
+		tau_J3.set(-B_SwLeg * qd_pitch.getDoubleValue());
+		tau_J4.set(-B_SwLeg * qd_pitch.getDoubleValue());
 	}
 
 	private void controlBodyAttitude() {
@@ -279,7 +280,7 @@ public class TeraLegController implements RobotController {
 		// x_i es la compresi�n inicial de la pierna
 		//
 		// diferencia entre la altura de salto deseada y la del �ltimo vuelo
-		delta_h = h_des - q_z.getDoubleValue() + Ke * h_error;
+//		delta_h = h_des - q_z.getDoubleValue() + Ke * h_error;
 		delta_h = h_des + Ke * h_error;
 		x_i = Lmax - q_z.getDoubleValue(); // la posici�n inicial del muelle.
 		K = Kleg;
@@ -327,7 +328,6 @@ public class TeraLegController implements RobotController {
 		return registry;
 	}
 
-	@Override
 	public void initialize() {
 		// TODO Auto-generated method stub
 
