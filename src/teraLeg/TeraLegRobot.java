@@ -264,7 +264,7 @@ public class TeraLegRobot extends Robot {
 		return select;
 	}
 
-	public double masaTotal() {
+	public double robotMass() {
 		double massa;
 		return massa = BODY_MASS + HIP_MASS + THIGH_MASS + SHANK_MASS + FOOT_MASS;
 	}

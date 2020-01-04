@@ -4,6 +4,7 @@ package teraLeg;
 //import javax.vecmath.*;
 import java.util.ArrayList;
 
+import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 //import teraLeg.TeraLegController.State;
@@ -32,7 +33,7 @@ import us.ihmc.simulationconstructionset.util.ground.FlatGroundProfile;
  * </p>
  *
  * <p>
- * Description: exoskeleton's and agile robot's leg 
+ * Description: exoskeleton's and agile robot's leg
  * </p>
  *
  * <p>
@@ -81,8 +82,8 @@ public class TeraLegController implements RobotController {
 	double Lmax = 1.2; // maximum leg length without singularity
 	double Lmin = 0.8; // Lmax - h_Des
 	double h_Des = 0.4; // desired height for jump control
-	double K_LgStf = 10; //8;//5;// leg spring constant: K_LgStf*m^0.67
-	double B_SwLeg = 10;//50; // damping constant for COM position control relative to foot
+	double K_LgStf = 10; // 8;//5;// leg spring constant: K_LgStf*m^0.67
+	double B_SwLeg = 10;// 50; // damping constant for COM position control relative to foot
 	private TeraLegRobot rob;
 
 	public TeraLegController(TeraLegRobot robot) {
@@ -172,12 +173,11 @@ public class TeraLegController implements RobotController {
 	}
 
 	private double LegStiffness() {
-		return K_LgStf * Math.pow(rob.masaTotal(), 0.67);
+		return K_LgStf * Math.pow(rob.robotMass(), 0.67);
 	}
 
 	/*
-	 * Transposed Jacobian, obtaining joint pairs as a function of the Cartesian
-	 * force at the end
+	 * Jacobian transpose: obtain joint pairs from end effector forces
 	 */
 	private void SetJointTorques(double Fx, double Fy, double Fz, double Mx, double My, double Mz) {
 
@@ -230,7 +230,7 @@ public class TeraLegController implements RobotController {
 		if (state == State.GROUND_CONTACT) {
 			controlBodyAttitude();
 			if (q_z.getDoubleValue() <= Lmin) {
-				state = State.COMPRESSED;
+//				state = State.COMPRESSED;
 				System.out.println("COMPRESSED");
 			}
 		} else if (state == State.COMPRESSED) {
@@ -258,15 +258,23 @@ public class TeraLegController implements RobotController {
 
 	private void controlBodyAttitude() {
 		double Fx = 0, Fy = 0, Fz = 0, Mx = 0, My = 0, Mz = 0;
-		double Kx = 300, Bx = 150, Ky = 50, By = 30;
-		//
-		// Esto mantiene el pie en la vertical del CM // * Math.sin( -q_J4.val)
+		double Kx = 30, Bx = 15, Ky = 50, By = 30;
+		/*
+		 * To keep the foot vertical with CoM
+		 */
 		Fx = Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue()) + Bx * (-spring4_dx.getDoubleValue());
-		//
-		// Esto corrige el pitch
+		/*
+		 * To keep the pitch
+		 */
 		My = Ky * q_pitch.getDoubleValue() + By * qd_pitch.getDoubleValue();
-		//
-		// aplica la transpuesta del jacobiano
+		/*
+		 * Robot's weight
+		 */
+		double mass = rob.robotMass();
+		Fz = -g * mass;
+		/*
+		 * Apply Jacobian transpose
+		 */
 		SetJointTorques(Fx, Fy, Fz, Mx, My, Mz);
 	}
 
@@ -284,7 +292,7 @@ public class TeraLegController implements RobotController {
 		delta_h = h_des + Ke * h_error;
 		x_i = Lmax - q_z.getDoubleValue(); // la posici�n inicial del muelle.
 		K = Kleg;
-		M = rob.masaTotal(); // Masa total
+		M = rob.robotMass(); // Masa total
 		// C�lculo de velocidad inicial vertical para el salto:
 		if (K * Math.pow(x_i, 2.0) / M >= 2 * 9.8 * delta_h) {
 			v_i = 0.0;
