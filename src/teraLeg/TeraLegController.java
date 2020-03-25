@@ -82,7 +82,9 @@ public class TeraLegController implements RobotController {
 	double Lmin = 0.8; // Lmax - h_Des
 	double h_Des = 0.4; // desired height for jump control
 	double K_LgStf = 10; // 8;//5;// leg spring constant: K_LgStf*m^0.67
-	double B_SwLeg = 50; // damping constant for COM position control relative to foot
+	double B_SwLeg = 50 / 4; // damping constant for COM position control relative to foot
+	double K_SwKnee = 50; // proportional constant for knee rest angle recover in flight
+	private DoubleYoVariable kneeAngle;// knee rest and flight angle
 	private TeraLegRobot rob;
 
 	public TeraLegController(TeraLegRobot robot) {
@@ -133,15 +135,20 @@ public class TeraLegController implements RobotController {
 		springForce = new DoubleYoVariable("springForce", registry);
 		z_flight_ant = new DoubleYoVariable("z_flight_ant", registry);
 		yoState = new IntegerYoVariable("yoState", registry);
+		/*
+		 * joint angle for desired robot' ankle silhouette
+		 */
+		kneeAngle = new DoubleYoVariable("kneeAngle", registry);// knee rest and flight angle
+
 		initControl();
 	}
 
 	private void initControl() {
-
+		kneeAngle.set(-1.6);
 		state = State.FLIGHT;
 		q_J2.set(-0.49);
 		q_J3.set(1.42);
-		q_J4.set(-1.6);
+		q_J4.set(kneeAngle.getDoubleValue());// -1.6);
 		q_z.set(0.867);
 		gc_front_z.set(0.0);
 		Kleg = LegStiffness();
@@ -244,6 +251,7 @@ public class TeraLegController implements RobotController {
 			if (gc_front_fs.getDoubleValue() == 0 && gc_rear_fs.getDoubleValue() == 0) {
 				z_flight_ant.set(0.0);
 				state = State.FLIGHT;
+				kneeAngle.set(q_J4.getDoubleValue());
 //				System.out.print("FLIGHT ");
 //				System.out.println(time);
 			}
@@ -264,7 +272,7 @@ public class TeraLegController implements RobotController {
 	private void swingLeg() {
 		tau_J2.set(-B_SwLeg * qd_J2.getDoubleValue());
 		tau_J3.set(-B_SwLeg * qd_J3.getDoubleValue());
-		tau_J4.set(-B_SwLeg/4 * qd_J4.getDoubleValue());
+		tau_J4.set(-(K_SwKnee * (q_J4.getDoubleValue() - kneeAngle.getDoubleValue()) - B_SwLeg * qd_J4.getDoubleValue()));
 	}
 
 	private void controlBodyAttitude() {
@@ -275,7 +283,7 @@ public class TeraLegController implements RobotController {
 		Fx = Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue()) + Bx * (-spring4_dx.getDoubleValue());
 		//
 		// Esto corrige el pitch
-		My = 2*Ky * q_pitch.getDoubleValue() + By * qd_pitch.getDoubleValue();
+		My = 2 * Ky * q_pitch.getDoubleValue() + By * qd_pitch.getDoubleValue();
 		//
 		// aplica la transpuesta del jacobiano
 		SetJointTorques(Fx, Fy, Fz, Mx, My, Mz);
@@ -305,10 +313,10 @@ public class TeraLegController implements RobotController {
 		// Nos evitamos invertir el jacobiano si lo pasamos a fuerza:
 		// El impulso M V = F DT
 		// Controlamos tambi�n la posici�n del pie y la orientaci�n del cuerpo
-		Fx = 6*Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue())
+		Fx = 6 * Kx * (q_x.getDoubleValue() - spring4_x.getDoubleValue())
 				+ Bx * (qd_x.getDoubleValue() - spring4_dx.getDoubleValue());
 		// My = 50 * q_pitch.val + 20 * qd_pitch.val;
-		My = 1000/5 * q_pitch.getDoubleValue() + 400/5 * qd_pitch.getDoubleValue();
+		My = 1000 / 5 * q_pitch.getDoubleValue() + 400 / 5 * qd_pitch.getDoubleValue();
 		// dt=0.02 es el periodo de muestreo; repartimos el impulso en 10 dT, es decir,
 		// 0.2s
 		Fz = -0.1 * M * v_i / 0.02;
